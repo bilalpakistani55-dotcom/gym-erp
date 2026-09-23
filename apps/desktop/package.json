@@ -1,0 +1,32 @@
+{
+  "name": "@gym-erp/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "start": "node --import tsx src/main.ts",
+    "dev": "node --import tsx src/main.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@gym-erp/backup-service": "*",
+    "@gym-erp/business-logic": "*",
+    "@gym-erp/database": "*",
+    "@gym-erp/hardware": "*",
+    "@gym-erp/security": "*",
+    "@gym-erp/shared-types": "*",
+    "@gym-erp/sync-engine": "*",
+    "@gym-erp/sync-service": "*",
+    "@gym-erp/ui": "*",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

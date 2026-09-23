@@ -1,0 +1,9 @@
+{
+  "name": "GYM ERP",
+  "short_name": "GYM ERP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#17151f",
+  "icons": []
+}

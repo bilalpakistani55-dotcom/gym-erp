@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>GYM ERP</title>
+<meta name="theme-color" content="#0e171a" />
+<meta name="color-scheme" content="light dark" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="preconnect" href="https://rsms.me/" crossorigin />
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<div id="app"></div>
+<div id="toast-root" aria-live="polite" aria-atomic="true"></div>
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem("gym_erp_theme");
+    if (!saved) {
+      saved = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.setAttribute("data-theme", saved);
+  } catch (e) {}
+})();
+</script>
+<script type="module" src="/app.js"></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});</script>
+</body>
+</html>

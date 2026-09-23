@@ -1,0 +1,34 @@
+{
+  "name": "gym-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GYM ERP — offline-first gym management for desktop and Android",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write .",
+    "desktop:dev": "npm run dev -w @gym-erp/desktop",
+    "desktop:build": "npm run build -w @gym-erp/desktop",
+    "mobile:start": "npm run start -w @gym-erp/mobile",
+    "mobile:android": "npm run android -w @gym-erp/mobile",
+    "db:migrate": "npm run migrate -w @gym-erp/database"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.16.0",
+    "eslint": "^9.16.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.8"
+  }
+}
