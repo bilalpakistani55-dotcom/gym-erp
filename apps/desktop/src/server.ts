@@ -754,9 +754,9 @@ export function startDesktopServer(db: SqlDatabase, options: DesktopServerOption
         return json(res, 200, { ok: true });
       }
       if (method === "PUT" && path === "/api/settings/account") {
-        const fullName = updateAccountProfile(db, ctx, body);
-        session.fullName = fullName;
-        return json(res, 200, { fullName });
+        const username = updateAccountProfile(db, ctx, body);
+        session.username = username;
+        return json(res, 200, { username });
       }
       if (method === "POST" && path === "/api/settings/password") {
         await changePassword(db, { gymId: ctx.gymId, userId: ctx.userId }, body);

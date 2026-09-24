@@ -125,7 +125,7 @@ export const changePasswordSchema = z
   });
 
 export const accountProfileSchema = z.object({
-  fullName: z.string().trim().min(2, "Enter a name.").max(120, "Name is too long."),
+  username: z.string().trim().min(3, "Use at least 3 characters for the login name.").max(80, "Login name is too long."),
 });
 
 export const dateRangeSchema = z.object({

@@ -110,8 +110,13 @@ export function updateAccountProfile(
     [ctx.userId, ctx.gymId],
   );
   if (!existing) throw new Error("Account not found.");
-  db.run(`UPDATE users SET full_name = ?, updated_at = ? WHERE id = ? AND gym_id = ?`, [
-    data.fullName,
+  const duplicate = db.get<{ id: string }>(
+    `SELECT id FROM users WHERE gym_id = ? AND username = ? AND id <> ? AND deleted_at IS NULL`,
+    [ctx.gymId, data.username, ctx.userId],
+  );
+  if (duplicate) throw new Error("That login name is already in use.");
+  db.run(`UPDATE users SET username = ?, updated_at = ? WHERE id = ? AND gym_id = ?`, [
+    data.username,
     nowIso(),
     ctx.userId,
     ctx.gymId,
@@ -119,13 +124,13 @@ export function updateAccountProfile(
   writeAudit(db, {
     gymId: ctx.gymId,
     userId: ctx.userId,
-    action: "Updated account name",
+    action: "Updated login name",
     entityType: "users",
     entityId: ctx.userId,
     deviceId: ctx.deviceId,
     after: data,
   });
-  return data.fullName;
+  return data.username;
 }
 
 export async function changePassword(

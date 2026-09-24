@@ -1985,9 +1985,9 @@ async function viewSettings() {
       </form>
       <h2 style="margin-top:26px">Account</h2>
       <form id="af">
-        <label>Admin name *</label>
-        <input name="fullName" required minlength="2" maxlength="120" value="${esc(state.me.fullName)}" />
-        <button class="btn primary" style="margin-top:14px">Save admin name</button>
+        <label>Login name *</label>
+        <input name="username" required minlength="3" maxlength="80" value="${esc(state.me.username)}" autocomplete="username" />
+        <button class="btn primary" style="margin-top:14px">Save login name</button>
       </form>
       <div class="list-item"><span>Signed in as</span><b>${esc(state.me.fullName)} (${esc(state.me.username)})</b></div>
       <div class="list-item"><span>Role</span><b>${esc(state.me.role)}</b></div>
@@ -2059,12 +2059,12 @@ async function viewSettings() {
     try {
       const result = await api("/api/settings/account", {
         method: "PUT",
-        body: { fullName: form.get("fullName") },
+        body: { username: form.get("username") },
       });
-      state.me.fullName = result.fullName;
+      state.me.username = result.username;
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalLabel;
-      toast("Admin name updated.", "success");
+      toast("Login name updated. Use the new name next time you sign in.", "success");
       renderShell();
     } catch (error) {
       submitBtn.disabled = false;
