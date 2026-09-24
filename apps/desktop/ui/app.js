@@ -1984,6 +1984,11 @@ async function viewSettings() {
         <button class="btn primary" style="margin-top:14px">Update password</button>
       </form>
       <h2 style="margin-top:26px">Account</h2>
+      <form id="af">
+        <label>Admin name *</label>
+        <input name="fullName" required minlength="2" maxlength="120" value="${esc(state.me.fullName)}" />
+        <button class="btn primary" style="margin-top:14px">Save admin name</button>
+      </form>
       <div class="list-item"><span>Signed in as</span><b>${esc(state.me.fullName)} (${esc(state.me.username)})</b></div>
       <div class="list-item"><span>Role</span><b>${esc(state.me.role)}</b></div>
     </div>
@@ -2038,6 +2043,29 @@ async function viewSettings() {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalLabel;
       toast("Password updated.", "success");
+    } catch (error) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalLabel;
+      toast(error.message, "danger");
+    }
+  });
+  document.getElementById("af").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = e.target.querySelector("button.primary");
+    const originalLabel = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `${spinner(true)} Saving…`;
+    const form = new FormData(e.target);
+    try {
+      const result = await api("/api/settings/account", {
+        method: "PUT",
+        body: { fullName: form.get("fullName") },
+      });
+      state.me.fullName = result.fullName;
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalLabel;
+      toast("Admin name updated.", "success");
+      renderShell();
     } catch (error) {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalLabel;

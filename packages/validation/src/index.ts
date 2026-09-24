@@ -124,6 +124,10 @@ export const changePasswordSchema = z
     message: "The new password must be different from the current one.",
   });
 
+export const accountProfileSchema = z.object({
+  fullName: z.string().trim().min(2, "Enter a name.").max(120, "Name is too long."),
+});
+
 export const dateRangeSchema = z.object({
   from: z.string().min(8),
   to: z.string().min(8),

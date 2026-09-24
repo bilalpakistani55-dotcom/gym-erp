@@ -46,6 +46,7 @@ import {
   setPlanActive,
   toggleAttendance,
   updateEmployee,
+  updateAccountProfile,
   updateGymProfile,
   updateMember,
   updatePlan,
@@ -751,6 +752,11 @@ export function startDesktopServer(db: SqlDatabase, options: DesktopServerOption
         requirePermission(session, "settings.manage");
         updateGymProfile(db, ctx, body);
         return json(res, 200, { ok: true });
+      }
+      if (method === "PUT" && path === "/api/settings/account") {
+        const fullName = updateAccountProfile(db, ctx, body);
+        session.fullName = fullName;
+        return json(res, 200, { fullName });
       }
       if (method === "POST" && path === "/api/settings/password") {
         await changePassword(db, { gymId: ctx.gymId, userId: ctx.userId }, body);

@@ -1,7 +1,7 @@
 import type { SqlDatabase } from "@gym-erp/database";
 import type { RoleCode } from "@gym-erp/shared-types";
 import { hashSessionToken, hashPassword, verifyPassword } from "@gym-erp/security";
-import { changePasswordSchema, friendlyParse, gymProfileSchema } from "@gym-erp/validation";
+import { accountProfileSchema, changePasswordSchema, friendlyParse, gymProfileSchema } from "@gym-erp/validation";
 import { writeAudit } from "./setup.js";
 
 function nowIso(): string {
@@ -97,6 +97,35 @@ export function listUsers(db: SqlDatabase, gymId: string): UserRow[] {
      FROM users WHERE gym_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`,
     [gymId],
   );
+}
+
+export function updateAccountProfile(
+  db: SqlDatabase,
+  ctx: { gymId: string; userId: string; deviceId: string },
+  input: unknown,
+): string {
+  const data = friendlyParse(accountProfileSchema, input);
+  const existing = db.get<{ id: string }>(
+    `SELECT id FROM users WHERE id = ? AND gym_id = ? AND deleted_at IS NULL`,
+    [ctx.userId, ctx.gymId],
+  );
+  if (!existing) throw new Error("Account not found.");
+  db.run(`UPDATE users SET full_name = ?, updated_at = ? WHERE id = ? AND gym_id = ?`, [
+    data.fullName,
+    nowIso(),
+    ctx.userId,
+    ctx.gymId,
+  ]);
+  writeAudit(db, {
+    gymId: ctx.gymId,
+    userId: ctx.userId,
+    action: "Updated account name",
+    entityType: "users",
+    entityId: ctx.userId,
+    deviceId: ctx.deviceId,
+    after: data,
+  });
+  return data.fullName;
 }
 
 export async function changePassword(
