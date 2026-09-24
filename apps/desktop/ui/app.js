@@ -131,45 +131,82 @@ function receiptDataUrl(member, result, plan, amountMinor, endDate) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(receiptSvg(member, result, plan, amountMinor, endDate))}`;
 }
 
-function showReceiptActions(member, result, plan, amountMinor, endDate) {
-  const imageUrl = receiptDataUrl(member, result, plan, amountMinor, endDate);
+async function receiptPng(member, result, plan, amountMinor, endDate) {
+  const svgUrl = receiptDataUrl(member, result, plan, amountMinor, endDate);
+  const image = new Image();
+  image.src = svgUrl;
+  await new Promise((resolve, reject) => {
+    image.onload = resolve;
+    image.onerror = () => reject(new Error("Could not create the receipt image."));
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = 1800;
+  canvas.height = 2400;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not create the receipt image.");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  if (!blob) throw new Error("Could not export the receipt image.");
+  return {
+    blob,
+    url: URL.createObjectURL(blob),
+    fileName: `gym-receipt-${result.receiptNumber || "membership"}.png`,
+  };
+}
+
+async function showReceiptActions(member, result, plan, amountMinor, endDate) {
+  const fallbackUrl = receiptDataUrl(member, result, plan, amountMinor, endDate);
   const modal = openModal(`
     <h2>Member setup complete</h2>
-    <p class="muted">Your professional receipt image is ready. Download it or share it, then send the WhatsApp message.</p>
-    <img src="${imageUrl}" alt="Professional membership receipt" class="receipt-preview" />
+    <p class="muted" id="receipt-image-status">Creating PNG receipt image…</p>
+    <img src="${fallbackUrl}" alt="Professional membership receipt" class="receipt-preview" />
     <div class="actions">
       <button type="button" class="btn" id="receipt-later">Close</button>
-      <button type="button" class="btn" id="download-receipt">Download receipt image</button>
-      <button type="button" class="btn" id="share-receipt">Share receipt image</button>
+      <button type="button" class="btn" id="download-receipt" disabled>Download PNG receipt</button>
+      <button type="button" class="btn" id="share-receipt" disabled>Share PNG to WhatsApp</button>
       <button type="button" class="btn primary" id="send-receipt-whatsapp">Send receipt to WhatsApp</button>
     </div>`);
+  let image = null;
   const send = () => openWhatsAppReceipt(member, result, plan, amountMinor, endDate);
   modal.querySelector("#send-receipt-whatsapp").addEventListener("click", () => {
     send();
-    modal.remove();
   });
   modal.querySelector("#receipt-later").addEventListener("click", () => modal.remove());
   modal.querySelector("#download-receipt").addEventListener("click", () => {
+    if (!image) return;
     const link = document.createElement("a");
-    link.href = imageUrl;
-    link.download = `gym-receipt-${result.receiptNumber || "membership"}.svg`;
+    link.href = image.url;
+    link.download = image.fileName;
     link.click();
   });
   modal.querySelector("#share-receipt").addEventListener("click", async () => {
-    if (!navigator.share) {
-      toast("Image sharing is not supported here. Download the receipt image instead.", "warn");
+    if (!image || !navigator.share) {
+      toast("Image sharing is not supported here. Download the PNG receipt instead.", "warn");
       return;
     }
     try {
-      const blob = await (await fetch(imageUrl)).blob();
-      const file = new File([blob], `gym-receipt-${result.receiptNumber || "membership"}.svg`, { type: "image/svg+xml" });
+      const file = new File([image.blob], image.fileName, { type: "image/png" });
       if (navigator.canShare && !navigator.canShare({ files: [file] })) throw new Error("File sharing is not supported.");
       await navigator.share({ title: `GYM receipt ${result.receiptNumber || ""}`, text: "Membership receipt", files: [file] });
     } catch {
-      toast("Image sharing is not supported here. Download the receipt image instead.", "warn");
+      toast("Image sharing was cancelled or is not supported here. Download the PNG receipt instead.", "warn");
     }
   });
-  // Open WhatsApp automatically, while leaving the image and retry controls visible.
+  try {
+    image = await receiptPng(member, result, plan, amountMinor, endDate);
+    const preview = modal.querySelector(".receipt-preview");
+    preview.src = image.url;
+    modal.querySelector("#receipt-image-status").textContent = "PNG receipt ready. Share it directly to WhatsApp or download it.";
+    modal.querySelector("#download-receipt").disabled = false;
+    modal.querySelector("#share-receipt").disabled = false;
+    const link = document.createElement("a");
+    link.href = image.url;
+    link.download = image.fileName;
+    link.click();
+  } catch (error) {
+    modal.querySelector("#receipt-image-status").textContent = error.message;
+  }
+  // Keep the existing automatic WhatsApp redirect for desktop browsers.
   send();
 }
 
