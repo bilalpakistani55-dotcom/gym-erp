@@ -700,7 +700,7 @@ function renderLogin(message) {
     try {
       const result = await api("/api/login", {
         method: "POST",
-        body: { username: form.get("username"), password: form.get("password") },
+        body: { username: String(form.get("username") || "").trim(), password: form.get("password") },
       });
       state.token = result.token;
       state.permissions = result.permissions;

@@ -125,7 +125,13 @@ export const changePasswordSchema = z
   });
 
 export const accountProfileSchema = z.object({
-  username: z.string().trim().min(3, "Use at least 3 characters for the login name.").max(80, "Login name is too long."),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Use at least 3 characters for the login name.")
+    .max(80, "Login name is too long.")
+    .regex(/^[a-z0-9._-]+$/, "Use only letters, numbers, dots, underscores, or hyphens."),
 });
 
 export const dateRangeSchema = z.object({

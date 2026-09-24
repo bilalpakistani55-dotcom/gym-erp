@@ -37,8 +37,8 @@ export async function loginUser(
     updated_at: string;
     deleted_at: string | null;
   }>(
-    `SELECT * FROM users WHERE gym_id = ? AND username = ? AND is_active = 1 AND deleted_at IS NULL LIMIT 1`,
-    [input.gymId, input.username],
+    `SELECT * FROM users WHERE gym_id = ? AND lower(username) = lower(?) AND is_active = 1 AND deleted_at IS NULL LIMIT 1`,
+    [input.gymId, input.username.trim()],
   );
 
   if (!row) return null;
