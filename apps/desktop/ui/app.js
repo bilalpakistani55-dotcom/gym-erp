@@ -65,32 +65,6 @@ function money(minor) {
   return `${state.currency} ${major.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function openWhatsAppReceipt(member, result, plan, amountMinor, endDate) {
-  const rawPhone = String(member?.phone || member?.whatsapp || "").trim();
-  if (!rawPhone) {
-    alert("Receipt created successfully, but this member has no phone number. Add a phone number to send it on WhatsApp.");
-    return;
-  }
-  let phone = rawPhone.replace(/[^\d+]/g, "");
-  if (phone.startsWith("00")) phone = `+${phone.slice(2)}`;
-  if (phone.startsWith("0")) phone = `+92${phone.slice(1)}`;
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 8) {
-    alert("Receipt created successfully, but the member phone number is not valid for WhatsApp.");
-    return;
-  }
-  const message = [
-    `GYM receipt ${result.receiptNumber || ""}`.trim(),
-    `Member: ${member.full_name || "Member"}`,
-    member.member_code ? `Member code: ${member.member_code}` : "",
-    `Plan: ${plan?.name || "Membership"}`,
-    `Amount: ${money(amountMinor)}`,
-    endDate ? `Valid until: ${endDate}` : "",
-    "A professional receipt image is ready in GYM ERP. Thank you for choosing our gym.",
-  ].filter(Boolean).join("\n");
-  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
-}
-
 function receiptSvg(member, result, plan, amountMinor, endDate) {
   const escXml = (value) => esc(value).replaceAll("'", "&apos;");
   const gymName = state.gymName || "GYM ERP";
@@ -163,14 +137,9 @@ async function showReceiptActions(member, result, plan, amountMinor, endDate) {
     <div class="actions">
       <button type="button" class="btn" id="receipt-later">Close</button>
       <button type="button" class="btn" id="download-receipt" disabled>Download PNG receipt</button>
-      <button type="button" class="btn" id="share-receipt" disabled>Share PNG to WhatsApp</button>
-      <button type="button" class="btn primary" id="send-receipt-whatsapp">Send receipt to WhatsApp</button>
+      <button type="button" class="btn primary" id="share-receipt" disabled>Share picture with participant</button>
     </div>`);
   let image = null;
-  const send = () => openWhatsAppReceipt(member, result, plan, amountMinor, endDate);
-  modal.querySelector("#send-receipt-whatsapp").addEventListener("click", () => {
-    send();
-  });
   modal.querySelector("#receipt-later").addEventListener("click", () => modal.remove());
   modal.querySelector("#download-receipt").addEventListener("click", () => {
     if (!image) return;
@@ -181,7 +150,7 @@ async function showReceiptActions(member, result, plan, amountMinor, endDate) {
   });
   modal.querySelector("#share-receipt").addEventListener("click", async () => {
     if (!image || !navigator.share) {
-      toast("Image sharing is not supported here. Download the PNG receipt instead.", "warn");
+      toast("Picture sharing is not supported here. Download the PNG receipt and send it manually.", "warn");
       return;
     }
     try {
@@ -189,25 +158,19 @@ async function showReceiptActions(member, result, plan, amountMinor, endDate) {
       if (navigator.canShare && !navigator.canShare({ files: [file] })) throw new Error("File sharing is not supported.");
       await navigator.share({ title: `GYM receipt ${result.receiptNumber || ""}`, text: "Membership receipt", files: [file] });
     } catch {
-      toast("Image sharing was cancelled or is not supported here. Download the PNG receipt instead.", "warn");
+      toast("Picture sharing was cancelled or is not supported here. Download the PNG receipt instead.", "warn");
     }
   });
   try {
     image = await receiptPng(member, result, plan, amountMinor, endDate);
     const preview = modal.querySelector(".receipt-preview");
     preview.src = image.url;
-    modal.querySelector("#receipt-image-status").textContent = "PNG receipt ready. Share it directly to WhatsApp or download it.";
+    modal.querySelector("#receipt-image-status").textContent = "PNG receipt ready. Share the picture with the participant or download it.";
     modal.querySelector("#download-receipt").disabled = false;
     modal.querySelector("#share-receipt").disabled = false;
-    const link = document.createElement("a");
-    link.href = image.url;
-    link.download = image.fileName;
-    link.click();
   } catch (error) {
     modal.querySelector("#receipt-image-status").textContent = error.message;
   }
-  // Keep the existing automatic WhatsApp redirect for desktop browsers.
-  send();
 }
 
 function can(permission) {
@@ -1275,7 +1238,7 @@ async function viewMemberDetail(id) {
               <select name="methodCode">${["cash", "bank_transfer", "card", "jazzcash", "easypaisa", "other"].map((c) => `<option value="${c}">${c.replaceAll("_", " ")}</option>`).join("")}</select></div>
           </div>
           <label>Notes</label><input name="notes" />
-          <div class="actions"><button type="button" class="btn" id="cancel">Cancel</button><button class="btn primary">Save & send on WhatsApp</button></div>
+          <div class="actions"><button type="button" class="btn" id="cancel">Cancel</button><button class="btn primary">Save membership</button></div>
         </form>`);
       backdrop.querySelector("#cancel").addEventListener("click", () => backdrop.remove());
       backdrop.querySelector("select").addEventListener("change", (e) => {
@@ -1311,7 +1274,7 @@ async function viewMemberDetail(id) {
                 body: { memberId: m.id, planId: plan.id, startDate, endDate: endDate.toISOString().slice(0, 10), payment },
               });
           backdrop.remove();
-          openWhatsAppReceipt(m, result, plan, payment.amountMinor, endDate.toISOString().slice(0, 10));
+          showReceiptActions(m, result, plan, payment.amountMinor, endDate.toISOString().slice(0, 10));
           void viewMemberDetail(id);
         } catch (error) {
           alert(error.message);
@@ -1514,7 +1477,7 @@ async function quickRenewForm(onDone) {
       <div id="renew-period" class="card" style="margin:10px 0"></div>
       <label>Payment method</label>
       <select name="methodCode">${["cash", "bank_transfer", "card", "jazzcash", "easypaisa", "other"].map((c) => `<option value="${c}">${c.replaceAll("_", " ")}</option>`).join("")}</select>
-      <div class="actions"><button type="button" class="btn" id="cancel">Cancel</button><button class="btn primary" id="save-renew">Save & send on WhatsApp</button></div>
+      <div class="actions"><button type="button" class="btn" id="cancel">Cancel</button><button class="btn primary" id="save-renew">Save membership</button></div>
     </form>`);
   let selected = null;
   let selectedDetail = null;
@@ -1581,11 +1544,11 @@ async function quickRenewForm(onDone) {
         ? await api("/api/memberships/renew", { method: "POST", body: { membershipId: current.id, planId: chosenPlan.id, startDate, payment } })
         : await api("/api/payments", { method: "POST", body: { memberId: selected, planId: chosenPlan.id, startDate, endDate: endDate.toISOString().slice(0, 10), payment } });
       backdrop.remove();
-      openWhatsAppReceipt(selectedDetail.member, result, chosenPlan, payment.amountMinor, endDate.toISOString().slice(0, 10));
+      showReceiptActions(selectedDetail.member, result, chosenPlan, payment.amountMinor, endDate.toISOString().slice(0, 10));
       void onDone?.();
     } catch (error) {
       saveButton.disabled = false;
-      saveButton.textContent = "Save & send on WhatsApp";
+      saveButton.textContent = "Save membership";
       alert(error.message);
     }
   });
