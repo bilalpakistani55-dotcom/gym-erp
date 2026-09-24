@@ -90,6 +90,25 @@ function openWhatsAppReceipt(member, result, plan, amountMinor, endDate) {
   window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, "_blank", "noopener");
 }
 
+function showReceiptActions(member, result, plan, amountMinor, endDate) {
+  const modal = openModal(`
+    <h2>Member setup complete</h2>
+    <p class="muted">The member, payment, and biometric setup are saved. Send the receipt to the member on WhatsApp now.</p>
+    <div class="actions">
+      <button type="button" class="btn" id="receipt-later">Close</button>
+      <button type="button" class="btn primary" id="send-receipt-whatsapp">Send receipt to WhatsApp</button>
+    </div>`);
+  const send = () => openWhatsAppReceipt(member, result, plan, amountMinor, endDate);
+  modal.querySelector("#send-receipt-whatsapp").addEventListener("click", () => {
+    send();
+    modal.remove();
+  });
+  modal.querySelector("#receipt-later").addEventListener("click", () => modal.remove());
+  // Keep the existing one-click workflow, while leaving a visible retry action
+  // when a browser blocks the new tab or WhatsApp is not installed.
+  send();
+}
+
 function can(permission) {
   return state.permissions.includes(permission);
 }
@@ -1045,18 +1064,6 @@ async function memberForm(existing, onDone) {
       }
       backdrop.remove();
       toast(existing ? "Member updated successfully." : "Member added successfully.", "success");
-      if (paymentId && selectedPlanId && created) {
-        const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
-        const initialEnd = new Date(`${today()}T00:00:00`);
-        initialEnd.setDate(initialEnd.getDate() + (selectedPlan?.duration_days || 0));
-        openWhatsAppReceipt(
-          { full_name: body.fullName, phone: body.whatsapp || body.phone },
-          created,
-          selectedPlan,
-          Math.round(Number(initialAmount.value || 0) * 100),
-          initialEnd.toISOString().slice(0, 10),
-        );
-      }
       if (!existing && enrollFace) {
         try {
           const frame = await captureFace();
@@ -1065,14 +1072,26 @@ async function memberForm(existing, onDone) {
         } catch (error) {
           if (error.message !== "Camera capture cancelled.") toast(`Member saved, but face enrollment failed: ${error.message}`, "warn");
         }
-        if (enrollFingerprint) {
-          try {
-            await api("/api/fingerprint/enroll", { method: "POST", body: { memberId: savedMemberId } });
-            toast("Fingerprint enrolled on the configured scanner.", "success");
-          } catch (error) {
-            toast(`Member saved, but fingerprint enrollment failed: ${error.message}`, "warn");
-          }
+      }
+      if (enrollFingerprint) {
+        try {
+          await api("/api/fingerprint/enroll", { method: "POST", body: { memberId: savedMemberId } });
+          toast("Fingerprint enrolled on the configured scanner.", "success");
+        } catch (error) {
+          toast(`Member saved, but fingerprint enrollment failed: ${error.message}`, "warn");
         }
+      }
+      if (paymentId && selectedPlanId && created) {
+        const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
+        const initialEnd = new Date(`${today()}T00:00:00`);
+        initialEnd.setDate(initialEnd.getDate() + (selectedPlan?.duration_days || 0));
+        showReceiptActions(
+          { full_name: body.fullName, phone: body.whatsapp || body.phone },
+          created,
+          selectedPlan,
+          Math.round(Number(initialAmount.value || 0) * 100),
+          initialEnd.toISOString().slice(0, 10),
+        );
       }
       void onDone?.();
     } catch (error) {
