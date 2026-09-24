@@ -652,6 +652,17 @@ html[data-theme="dark"] { --icon-filter: invert(1) hue-rotate(180deg) saturate(0
   background: #fff; border: 1px solid var(--border);
   border-radius: 12px; box-shadow: var(--shadow-sm);
 }
+.receipt-preview {
+  display: block;
+  width: min(100%, 360px);
+  max-height: 58vh;
+  object-fit: contain;
+  margin: 16px auto 4px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+  background: #fff;
+}
 
 .form-row {
   display: grid;
